@@ -16,6 +16,8 @@
 #include <hspectrometer.h>
 #include <hparticlecand.h>
 #include "hemcneutralcand.h"
+//#include "hemcNeutralCandSim.h"
+#include "hemcneutralcandsim.h"
 #include "hemcclustersim.h"
 #include "hemccluster.h"
 
@@ -76,29 +78,6 @@
 #include <TGraphErrors.h>
 long long int total=0;
 long long int refited=0;
-double trackDistance(HParticleCand* track1, HParticleCand*  track2)
-    {
-      double dist;
-      HGeomVector base_1, base_2, dir_1, dir_2;
-      HParticleTool p_tool;
-
-      p_tool.calcSegVector(track1->getZ(),track1->getR(),TMath::DegToRad()*track1->getPhi(),TMath::DegToRad()*track1->getTheta(),base_1,dir_1);
-      p_tool.calcSegVector(track2->getZ(),track2->getR(),TMath::DegToRad()*track2->getPhi(),TMath::DegToRad()*track2->getTheta(),base_2,dir_2);
-      dist=p_tool.calculateMinimumDistance(base_1,dir_1,base_2,dir_2);
-      return dist;
-    }
-
-    HGeomVector trackVertex(HParticleCand* track1, HParticleCand*  track2)
-    {
-      HGeomVector ver;
-      HGeomVector base_1, base_2, dir_1, dir_2;
-      HParticleTool p_tool;
-
-      p_tool.calcSegVector(track1->getZ(),track1->getR(),TMath::DegToRad()*track1->getPhi(),TMath::DegToRad()*track1->getTheta(),base_1,dir_1);
-      p_tool.calcSegVector(track2->getZ(),track2->getR(),TMath::DegToRad()*track2->getPhi(),TMath::DegToRad()*track2->getTheta(),base_2,dir_2);
-      ver=p_tool.calcVertexAnalytical(base_1,dir_1,base_2,dir_2);
-      return ver;
-    }
 
     Int_t getMotherIndex(HGeantKine* particle)
     {
@@ -112,34 +91,6 @@ double trackDistance(HParticleCand* track1, HParticleCand*  track2)
       //return particle->getGeneratorInfo1();
     }
 
-
-    bool isLepton(HParticleCand* particle)
-    {
-      double delta=0.05;
-      double mquality=particle->getRichMatchingQuality();
-
-      double dphi=particle->getDeltaPhi();
-      double dtheta=particle->getDeltaTheta();
-      
-          
-      if(particle->isFlagBit(kIsUsed))
-	{
-	  if(mquality==-1 || mquality>5)
-	    return false;
-	  if(particle->getBeta()<(1-delta) || particle->getBeta()>(1+delta))
-	    return false;
-	  // if(dtheta<-0.4 || dtheta>0.4)
-	  // return false;
-	  // if(dphi*TMath::Sin(particle->getTheta())>0.4 || dphi*TMath::Sin(particle->getTheta())<-0.4)
-	  // return false;
-	}
-      else
-	return false;
-     
-      return true;
-    }
-
-/////////GEANT END
 #define PI 3.14159265
 
 #define PR(x)                                                                                      \
@@ -234,7 +185,7 @@ Int_t ecal_tests(HLoop* loop, const AnaParameters& anapars)
   
     //LOADING CATEGORIES
     // Check if loop was properly initialized
-    if (!loop->setInput("+HEmcNeutralCand,+HEmcCluster,+HGeantKine"))
+    if (!loop->setInput("+HEmcNeutralCand,+HEmcCluster,+HGeantKine,+HEmcNeutralCandSim"))
     { // reading file structure
         std::cerr << "READBACK: ERROR : cannot read input !" << std::endl;
         std::exit(EXIT_FAILURE);
@@ -257,14 +208,15 @@ Int_t ecal_tests(HLoop* loop, const AnaParameters& anapars)
     HCategory* fParticleCand = HCategoryManager::getCategory(catParticleCand, kTRUE, "catParticleCand");
     if (!fParticleCand) { cout << "No catParticleCand!" << endl; }
 
-    HCategory* fEmcNeutralCand = HCategoryManager::getCategory(catEmcNeutralCand, kTRUE, "catEmcNeutralCand");
-    if(!fEmcNeutralCand){cout << "No catEmcNeutralCand!" << endl;}
-    
-    HCategory* fEmcCluster = HCategoryManager::getCategory(catEmcCluster, 0, "catEmcCluster");
-    if(!fEmcCluster){cout << "No catEmcCluster!" << endl;}
-
     HCategory * fStart2Hit = HCategoryManager::getCategory(catStart2Hit, kTRUE, "catStart2Hit");
     if (!fStart2Hit) { cout << "No catStart2Hit!" << endl; }
+
+    HCategory* fEmcNeutralCand =HCategoryManager::getCategory(catEmcNeutralCand, kTRUE,"catEmcNeutralCandSim");
+    if(!fEmcNeutralCand){cout << "No catEmcNeutralCandSim!" << endl;}
+
+    HCategory* fEmcCluster =HCategoryManager::getCategory(catEmcCluster, 0, "catEmcClusterSim");
+    if(!fEmcCluster){cout << "No catEmcClusterSim!" << endl;}
+
     
     HCategory *catGeant = loop->getCategory("HGeantKine");//ADDED geant
     HCategory *catEmcClus = loop->getCategory("HEmcCluster");// EMC gen
@@ -315,19 +267,10 @@ Int_t ecal_tests(HLoop* loop, const AnaParameters& anapars)
 
     //----------------------------------------------------------------------------------------------
   
-    TH2F *hbeta_mom= new TH2F("hbeta_mom","hbeta_mom",1000,-4000.,4000.,700,0.,1.4);
-    TH2F *hbeta_mom_p= new TH2F("hbeta_mom_p","hbeta_mom_p",1000,0.,4000.,700,0.,1.4);
-    TH2F *hbeta_mom_pip= new TH2F("hbeta_mom_pip","hbeta_mom_pip",1000,0.,4000.,700,0.,1.4);
-    TH2F *hbeta_mom_pim= new TH2F("hbeta_mom_pim","hbeta_mom_pim",1000,-4000.,0.,700,0.,1.4);
 
-    TH2F* hmass_mom = new TH2F("hmass_mom","hmass_mom; p*q [MeV/c]; mass",1000,-2000,4000,1000,0,2000);
-    TH1F *hmass=new TH1F("hmass","hmass",1000,-2000,2000);
     
     TH1F *hbeta=new TH1F("hbeta","hbeta",1000,0,2);
     TH1F *hbeta150=new TH1F("hbeta150","hbeta150",1000,0,2);
-    TH1F *hbeta500=new TH1F("hbeta500","hbeta500",1000,0,2);
-    TH1F *hbeta100_1=new TH1F("hbeta100_1","hbeta100_1",1000,0,2);
-    TH1F *hbeta500_1=new TH1F("hbeta500_1","hbeta500_1",1000,0,2);
     TH1F *htime=new TH1F("htime","htime",2200,-200,2000);
     
     TH1F *htracklength=new TH1F("htracklength","htracklength",2000,2000,4000);
@@ -608,18 +551,6 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
         }
 
         /*Int_t nbytes =*/loop->nextEvent(ev); // get next event. categories will be cleared before
-        /////////////////////////////////////////////
-        //EMC GEN
-        //hEPhton1EMC_gen
-        ////
-        //catGeaKine
- //HGeantKine* pKine2  = (HGeantKine*)catGeaKine->getObject(track2-1);
-   //     id2   = pKine2->getID();
-     //   mom2  = pKine2->getTotalMomentum();
-        //  Int_t Ntracks = emc->getNTracks();
-     
-
-        ///
     vector<HGeantKine*> emc_gen_kine;
          Int_t nEmcCluster = catEmcClus->getEntries();
     
@@ -629,94 +560,15 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
       HGeantKine* pKine  = (HGeantKine*)catGeaKine->getObject(track-1);
       emc_gen_kine.push_back(pKine);
       hEPhtonEMC_gen->Fill(pKine->getTotalMomentum());
-      //cout<<pKine->getTotalMomentum()<<endl;;
-      //hEPhtonEMC_gen->Fill(E2->getTotalMomentum());
      double mom2  = pKine->getTotalMomentum();
-      //cout<<mom2<<endl;
-/*
-          pid.sector=emc->getSector();
-	  pid.theta=emc->getTheta();
-          pid.phi=emc->getPhi();
-          pid.size=emc->getNCells();
-          pid.cell=systemMap[emc->getCell()];
-          pid.matchedCells = emc->getNMatchedCells(); // 0 : not matched (neutral particle)
-	  //pid.matchedPart=emc_ModMult[emc->getSector()][systemMap[emc->getCell()]]++ ;
-	  pid.matchedPart=-1 ;
-          pid.flag=emc->isUsedInParticleCand();
-          pid.energy=emc->getEnergy();
-          pid.max_energy=emc->getMaxEnergy();
-          pid.time=emc->getTime();
-	  
-          // Calculate Beta:
-          Double_t trackLength = TMath::Sqrt(emc->getXLab()*emc->getXLab()+emc->getYLab()*emc->getYLab()+(emc->getZLab()+30)*(emc->getZLab()+30));  
-          Double_t Beta        = (trackLength/1000.)/(pid.time*1.e-9) / TMath::C();
-	  pid.distance=trackLength;
-	  pid.beta=Beta;
-	  
-          //RPC variables
-	  
-	  pid.qualityDThDPh=emc->getQualDThDPh();
-	  pid.qualityDTime=emc->getQualDTime();
-          pid.tof_rpc=-1000;
-          pid.theta_rpc=-1000;
-          pid.phi_rpc=-1000;
-	  /*
-	  if(emc->getRpcIndex()>-1&&emc->getNMatchedCells()>0) {
-            Int_t RPCInd=emc->getRpcIndex();
-	    HRpcCluster* rpcClst   = HCategoryManager::getObject(rpcClst  ,fCatRpcCluster,RPCInd);
-	    pid.tof_rpc=rpcClst->getTof();
-	    pid.theta_rpc=rpcClst->getTheta();
-	    pid.phi_rpc=rpcClst->getPhi();
-	  }
-	  */
-      /*
-      
-          mult_emc++;
-          pid.downflag=0;
-          if( mult_emc>1) pid.downflag = -1; //only 1st tree entry in event
-                                              //had downflag=0
-                                              //downflag is not used anyway
-	        
-      Int_t Ntracks = emc->getNTracks();
-      Int_t track = emc->getTrack();
-      HGeantKine* pKine  = (HGeantKine*)catGeaKine->getObject(track-1);
-      Float_t     mom  = pKine->getTotalMomentum();
-      Int_t       id      = pKine->getID();
-      HGeantKine* prnt    = pKine->getParent(track);
-      Int_t       idp     = prnt!=NULL ? prnt->getID()    : 0; 
-      Int_t       trkPi0I = prnt!=NULL ? prnt->getTrack() : 0;
-
-      Int_t track2  = -1;
-      Float_t mom2  = -1;
-      Int_t   id2    = -1;
-      if(Ntracks>1) {
-	track2 = emc->getTrack(1);
-        HGeantKine* pKine2  = (HGeantKine*)catGeaKine->getObject(track2-1);
-        id2   = pKine2->getID();
-        mom2  = pKine2->getTotalMomentum();
-      }
-      
-      pid.ntracks= Ntracks;
-      pid.id=id;
-      pid.mom_geant   = mom;
-      pid.parentid=idp;
-      pid.id2=id2;
-      pid.mom_geant2   = mom2;
-	
-      if(emc->getNMatchedCells()==0&&Beta>0.95) nGammas++; 
-
-      //if(emc->getNMatchedCells()!=0) continue; 
-      nt->Fill();
-*/
+  	
     }  //loop over cluster
 
 
 
-        ////////////////////////////////////////
-        //geant
         HParticleCandSim* partH=nullptr;
-	    //HFwDetCandSim*  partFT=nullptr;
          std::vector<HGeantKine *> geantkine_vec;
+
 
 	    HGeantKine* kine=nullptr;
 
@@ -746,9 +598,6 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
 	        int kineparentID=getMotherIndex(kine);
 
             float weight=kine->getGeneratorWeight();
-	        //if(kine->isInAcceptance()) cout<<"::::::::"<<endl;
-	  
-	        //hPRmotherindex->Fill(kineparentID);
 
 	        int flep=0;
 	        int flem=0;
@@ -777,10 +626,6 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
         {   
             HGeantKine  phot_geant_cand_1=*geantkine_vec[0];
             HGeantKine  phot_geant_cand_2=*geantkine_vec[1];
-             //      TH1F * htheta_GEANT= new TH1F("htheta_GEANT","htheta_GEANT",1000,-180,180);
-            //cout<<phot_geant_cand_1.E()<<endl;
-            //hEPhtoton1beforeRefit_GEANT->Fill()
-           // hEPhtoton2beforeRefit_GEANT
         }
 
         //GEANT END
@@ -812,6 +657,7 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
 	    hnumOfNeutral->Fill(nNeutral_ev);
 	
         std::vector<KFitParticle *> kFit_gamma;
+        std::vector<HEmcNeutralCandSim *> Neutr_vec;
         // std::vector<HGeantKine *> geantkine_vec;
 	    for (int j = 0; j < nNeutral_ev; ++j)
 	    {
@@ -821,6 +667,8 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
             Float_t dist  = neutr_cand->getDistanceToEmc();
             Int_t ind=neutr_cand->getEmcClusterIndex();
 
+           HEmcNeutralCandSim* neutr_cand_sim =
+HCategoryManager::getObject(neutr_cand_sim, fEmcNeutralCand, j);
 
             //geant
             HGeantKine *geantkine;
@@ -841,9 +689,6 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
             
 
             Double_t energy  = cl->getEnergy();
-            //HGeomVector trackVec(cl->getXLab()- VertexX, cl->getYLab()- VertexY, cl->getZLab() - VertexZ);
-            //Double_t trackLength = trackVec.length();
-            //trackVec  *= (energy/trackLength);
 
             Double_t tof  =cl->getTime();
             Float_t theta = cl->getTheta();
@@ -862,17 +707,6 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
             htimevscell->Fill(sec*200+cel,tof);
             
             if(energy>150 && cl_size==1)hbeta150->Fill(beta);
-            if(energy>500 && cl_size==1)hbeta500->Fill(beta);
-            
-            if(energy>100 && cl_size==1 && tof>0 && tof<50){
-
-            hbeta100_1->Fill(beta);
-            henergyvscell1->Fill(sec*200+cel,energy);
-            hbetavscell1->Fill(sec*200+cel,beta);
-            }
-            if(energy>500 && cl_size==1 && tof>0 && tof<50){
-            hbeta500_1->Fill(beta);
-            }
             hg_energy->Fill(energy);
             if(cl_size==1)hg_energy_cl1->Fill(energy);
 
@@ -898,11 +732,9 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
                 kFit_gamma.push_back(candidate);
                 gamma_vector.push_back(neutr_cand);
                     hEPhtotonbeforeRefitcomb->Fill(candidate->Energy());
-              
+                    Neutr_vec.push_back(neutr_cand_sim);
   
             htheta_reco150->Fill(candidate->getTheta()*TMath::RadToDeg());
-    //cout<<candidate->getTheta()<<endl;
-               // cout<<lvg.E()<<" to  "<<candidate->Energy()<<endl;
             }
 
 
@@ -991,7 +823,7 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
                         if (FitterMass.getProb() > 0.01)
                         {
                           refited++;
-                        }
+                        
                         hPullEInvPhoton1Conv_mass_mix->Fill(FitterMass.getPull(0));
                         hPullThetaPhoton1Conv_mass_mix->Fill(FitterMass.getPull(1));
                         hPullPhiPhoton1Conv_mass_mix->Fill(FitterMass.getPull(2));
@@ -1047,33 +879,45 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
                             hphiPhtotonBeforeRefit_mix->Fill(cand2mass.Phi()*180.0/M_PI);
 
 
-                            //photon residuals
                             hResidua_Refit_Reco_photon1_E->Fill(cand1mass.Energy()-cand1Dec.Energy());
-                            //cout<<cand1mass.Energy()-cand1Dec.Energy()<<"   "<<EE1<<"  "<<cand1mass.Energy()<<"   "<<cand11Dec.Energy()<<endl;
-                           // hResidua_Refit_Reco_photon1_E->Fill(cand1mass.Energy()-cand1Dec.Energy());
-                            hResidua_Refit_Reco_photon1_theta->Fill(cand1mass.Theta()*R2D-cand1Dec.Theta()*R2D);
-                            hResidua_Refit_Reco_photon1_phi->Fill(cand1mass.Phi()*R2D-cand1Dec.Phi()*R2D);
-                           // cout<<cand1mass.Phi()*R2D<<"  "<<cand1Dec.Phi()*R2D<<"  "<<cand1mass.getPhi()-cand1Dec.Phi()*R2D<<endl;
+                            hResidua_Refit_Reco_photon1_theta->Fill(cand1mass.getTheta()-cand1Dec.getTheta());
+                            hResidua_Refit_Reco_photon1_phi->Fill(cand1mass.getPhi()-cand1Dec.getPhi());
                             hResidua_Refit_Reco_photon1_R->Fill(cand1mass.getR()-cand1Dec.getR());
                             hResidua_Refit_Reco_photon1_Z->Fill(cand1mass.getZ()-cand1Dec.getZ());
 
-                            hResidua_True_Refit_photon1_E->Fill(emc_gen_kine[ii]->getTotalMomentum()-cand1mass.Energy());
-                            hResidua_True_Refit_photon1_theta->Fill(emc_gen_kine[ii]->getThetaDeg()-cand1mass.Theta()*R2D);
-                            hResidua_True_Refit_photon1_phi->Fill(emc_gen_kine[ii]->getPhiDeg()-cand1mass.Phi()*R2D);
-                          //  cout<<emc_gen_kine[ii]->getPhiDeg()<<" "<<cand1mass.Phi()*R2D<<endl;
+                            hResidua_True_Refit_photon1_E->Fill(Neutr_vec[ii]->getGeantTotalMom()-cand1mass.Energy());
+                            hResidua_True_Refit_photon1_theta->Fill(Neutr_vec[ii]->getTheta()-cand1mass.Theta()*R2D);
+                            hResidua_True_Refit_photon1_phi->Fill(Neutr_vec[ii]->getPhi()-cand1mass.Phi()*R2D);
+
+
+                            hResidua_True_Reco_photon1_E->Fill(Neutr_vec[ii]->getGeantTotalMom()-cand1Dec.Energy());
+                            hResidua_True_Reco_photon1_theta->Fill(Neutr_vec[ii]->getTheta()-cand1Dec.Theta()*R2D);
+                            hResidua_True_Reco_photon1_phi->Fill(Neutr_vec[ii]->getPhi()-cand1Dec.Phi()*R2D);
 
 
 
-                            hResidua_True_Reco_photon1_E->Fill(emc_gen_kine[ii]->getTotalMomentum()-cand1Dec.Energy());
-                            hResidua_True_Reco_photon1_theta->Fill(emc_gen_kine[ii]->getThetaDeg()-cand1Dec.Theta()*R2D);
-                            hResidua_True_Reco_photon1_phi->Fill(emc_gen_kine[ii]->getPhiDeg()-cand1Dec.Phi()*R2D);
-                            //hResidua_True_Refit_photon1_R->Fill(cand1mass.getR()-cand1Dec.getR());
-                            //hResidua_True_Refit_photon1_Z->Fill(cand1mass.getZ()-cand1Dec.getZ());
-                            //cout<<emc_gen_kine[ii]->getTotalMomentum()<<"    "<<cand1mass.Energy()<<endl;
-                            //hResidua_True_Refit_photon1_theta->Fill(geantkine_vec[ii]->getTheta()-cand1mass.Theta());
-                            //hResidua_True_Refit_photon1_phi
-                            //hResidua_True_Refit_photon1_R
-                            //hResidua_True_Refit_photon1_Z
+
+
+
+
+
+
+
+
+                            hResidua_Refit_Reco_photon1_E->Fill(cand2mass.Energy()-cand11Dec.Energy());
+                            hResidua_Refit_Reco_photon1_theta->Fill(cand2mass.Theta()*R2D-cand11Dec.Theta()*R2D);
+                            hResidua_Refit_Reco_photon1_phi->Fill(cand2mass.Phi()*R2D-cand11Dec.Phi()*R2D);
+                            hResidua_Refit_Reco_photon1_R->Fill(cand2mass.getR()-cand11Dec.getR());
+                            hResidua_Refit_Reco_photon1_Z->Fill(cand2mass.getZ()-cand11Dec.getZ());
+
+                            hResidua_True_Refit_photon1_E->Fill(Neutr_vec[jj]->getGeantTotalMom()-cand2mass.Energy());
+                            hResidua_True_Refit_photon1_theta->Fill(Neutr_vec[jj]->getTheta()-cand2mass.Theta()*R2D);
+                            hResidua_True_Refit_photon1_phi->Fill(Neutr_vec[jj]->getPhi()-cand2mass.Phi()*R2D);
+
+
+                            hResidua_True_Reco_photon1_E->Fill(Neutr_vec[jj]->getGeantTotalMom()-cand11Dec.Energy());
+                            hResidua_True_Reco_photon1_theta->Fill(Neutr_vec[jj]->Theta()*R2D-cand11Dec.getTheta()*R2D);
+                            hResidua_True_Reco_photon1_phi->Fill(Neutr_vec[jj]->Phi()*R2D-cand11Dec.Phi()*R2D);
 
 
 
@@ -1084,31 +928,13 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
                             hEPi0BeforeRefit_selection->Fill(pi0_simple.E());
                             
                             hPPi0BeforeRefit_selection->Fill(pi0_simple.P());
-                            //hPPi0BeforeRefit
                             hmassPi0BeforeRefit_selection->Fill(pi0_simple.Mag());
-                            //hmassPi0BeforeRefit
                             hthetahtoton2BeforeRefit_selection->Fill(pi0_simple.Theta()*TMath::RadToDeg());
-                           // cout<<pi0_simple.Theta()*TMath::RadToDeg()<<endl;
-                            //hthetahtoton2BeforeRefit
-                           // cout<<pi0_simple.Phi()*TMath::RadToDeg()<<endl<<endl;;
                             hphiPi0BeforeRefit_selection->Fill(pi0_simple.Phi()*TMath::RadToDeg());
                             hthetaPi0BeforeRefit_selection->Fill(pi0_simple.Theta()*TMath::RadToDeg());
-                           // hphiPi0BeforeRefit
-                            
-                            
-                            
-                            
-                            
-                            
-                            
                             
                             
                             TLorentzVector pi0_simple_new=cand1mass+cand2mass;
-                            
-                            
-                            
-                            
-                            
                             
                             hEPi0AfterRefit->Fill(pi0_simple_new.E());
                             hPPi0AfterRefit->Fill(std::sqrt(std::pow(pi0_simple_new.Px(),2)+std::pow(pi0_simple_new.Py(),2)+std::pow(pi0_simple_new.Pz(),2)));
@@ -1116,7 +942,7 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
                             hmassPi0AfterRefit->Fill(pi0_mass_refit);
                             hthetaPi0AfterRefit->Fill(pi0_simple_new.Theta()*180.0/M_PI);
                             hphiPi0AfterRefit->Fill(pi0_simple_new.Phi()*180.0/M_PI);
-                       // }//prob
+                        }//prob
                     }
                     candsFit.pop_back();
                     candsFit.pop_back();
@@ -1134,32 +960,7 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
 	        //SAVING RESULTS
     output_file->cd();
 
-    //hbeta_mom->Write();
-    //hmass_mom->Write();
-    //hmass->Write();
-    //hbeta_mom_p->Write();
-    //hbeta_mom_pip->Write();
-    //hbeta_mom_pim->Write();
 
-    /*
-    hcl_size->Write();
-    hnumOfNeutral->Write();  
-    hnumOfNeutral_g100->Write();
-    
-    hbeta100->Write();
-    hbeta100_1->Write();
-    htime->Write();
-    htracklength->Write();
-    hg_energy->Write();
-    hg_energy_cl1->Write();
-    hOA_gg->Write();
-    
-
-    henergyvscell->Write();
-    htimevscell->Write();
-    henergyvscell1->Write();
-    hbetavscell1->Write();
-    */
     //*************************
     hbeta->Write();
     hbeta150->Write();
