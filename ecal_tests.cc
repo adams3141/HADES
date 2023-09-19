@@ -532,6 +532,7 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
     const double mp=938.27231;
     const double beam_energy = 4536. + mp;
     const double beam_momentum = sqrt(beam_energy*beam_energy-mp*mp);
+    
 
     TLorentzVector proj(0,0,beam_momentum, beam_energy);
     TLorentzVector targ(0,0,0, mp);
@@ -645,18 +646,22 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
 	    for (int j = 0; j < nNeutral_ev; ++j)
 	    {
         //LOADING DATA FROM EVENT
-            HEmcNeutralCand* neutr_cand = HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
+          //  HEmcNeutralCand* neutr_cand = HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
+          //  neutr_cand->calc4vectorProperties(0.0);//zmiana
+           // Float_t dist  = neutr_cand->getDistanceToEmc();
+            //Int_t ind=neutr_cand->getEmcClusterIndex();
+
+           HEmcNeutralCandSim* neutr_cand =
+HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
+            //geant
+            HGeantKine *geantkine;
+            geantkine = HCategoryManager::getObject(geantkine, catGeant, neutr_cand->getGeantTrack()-1);
+           // cout<<neutr_cand->E()<<"  "<<geantkine->getTotalMomentum()<<endl;
+            //cout<<geantkine->getE()<<endl;
+
             neutr_cand->calc4vectorProperties(0.0);//zmiana
             Float_t dist  = neutr_cand->getDistanceToEmc();
             Int_t ind=neutr_cand->getEmcClusterIndex();
-
-           HEmcNeutralCandSim* neutr_cand_sim =
-HCategoryManager::getObject(neutr_cand_sim, fEmcNeutralCand, j);
-            //geant
-            HGeantKine *geantkine;
-            geantkine = HCategoryManager::getObject(geantkine, catGeant, neutr_cand_sim->getGeantTrack());
-            //cout<<neutr_cand_sim->E()<<"  "<<geantkine->getTotalMomentum()<<endl;
-            //cout<<geantkine->getE()<<endl;
 
 
             //
@@ -712,9 +717,11 @@ HCategoryManager::getObject(neutr_cand_sim, fEmcNeutralCand, j);
                     
                 kFit_gamma.push_back(candidate);
                 gamma_vector.push_back(neutr_cand);
+                 geantkine_vec.push_back(geantkine);
                     hEPhtotonbeforeRefitcomb->Fill(candidate->Energy());
                     hEPhtonEMC_gen->Fill(geantkine->getTotalMomentum());
-                    geantkine_vec.push_back(geantkine);
+                   
+                    htheta_GEANT->Fill(geantkine->getThetaDeg());
   
             htheta_reco150->Fill(candidate->getTheta()*TMath::RadToDeg());
             }
@@ -887,7 +894,9 @@ HCategoryManager::getObject(neutr_cand_sim, fEmcNeutralCand, j);
                             hResidua_True_Refit_photon_E->Fill(geantkine_vec[jj]->getTotalMomentum()-cand2mass.Energy());
                             hResidua_True_Refit_photon_theta->Fill(geantkine_vec[jj]->getThetaDeg()-cand2mass.Theta()*R2D);
                             hResidua_True_Refit_photon_phi->Fill(geantkine_vec[jj]->getPhiDeg()-cand2mass.Phi()*R2D);
-
+                            cout<<geantkine_vec[jj]->getTotalMomentum()<<"  "<<cand2mass.Energy()<<"  "<<cand11Dec.Energy()<<endl;
+                            hResidua_True_Refit_photon_theta->Fill(geantkine_vec[jj]->getThetaDeg()-cand2mass.Theta()*R2D);
+                            hResidua_True_Refit_photon_phi->Fill(geantkine_vec[jj]->getPhiDeg()-cand2mass.Phi()*R2D);
 
                             hResidua_True_Reco_photon_E->Fill(geantkine_vec[jj]->getTotalMomentum()-cand11Dec.Energy());
                             hResidua_True_Reco_photon_theta->Fill(geantkine_vec[jj]->getThetaDeg()-cand11Dec.Theta()*R2D);
