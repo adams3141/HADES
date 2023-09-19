@@ -532,7 +532,6 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
     const double mp=938.27231;
     const double beam_energy = 4536. + mp;
     const double beam_momentum = sqrt(beam_energy*beam_energy-mp*mp);
-    
 
     TLorentzVector proj(0,0,beam_momentum, beam_energy);
     TLorentzVector targ(0,0,0, mp);
@@ -861,8 +860,8 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
                             hphiPhtotonBeforeRefit_mix->Fill(cand2mass.Phi()*180.0/M_PI);
 
                             hResidua_Refit_Reco_photon_E->Fill(cand1mass.Energy()-cand1Dec.Energy());
-                            hResidua_Refit_Reco_photon_theta->Fill(cand1mass.getTheta()-cand1Dec.getTheta());
-                            hResidua_Refit_Reco_photon_phi->Fill(cand1mass.getPhi()-cand1Dec.getPhi());
+                            hResidua_Refit_Reco_photon_theta->Fill(cand1mass.Theta()*R2D-cand1Dec.Theta()*R2D);
+                            hResidua_Refit_Reco_photon_phi->Fill(cand1mass.Phi()*R2D-cand1Dec.Phi()*R2D);
                             hResidua_Refit_Reco_photon_R->Fill(cand1mass.getR()-cand1Dec.getR());
                             hResidua_Refit_Reco_photon_Z->Fill(cand1mass.getZ()-cand1Dec.getZ());
 
