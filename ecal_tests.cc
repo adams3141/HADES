@@ -374,22 +374,22 @@ TH1F * hEPhtonEMC_gen= new TH1F("hEPhtonEMC_gen","E Phtoton comb EMC gen",100,0,
     TH1F * hthetaPi0BeforeRefit_selection= new TH1F("hthetaPi0BeforeRefit_selection","hEphiPi0BeforeRefit_selection",1000,-180,180);
     TH1F * hthetaPi0BeforeRefit= new TH1F("hthetaPi0BeforeReft","hEphiPi0BeforeRefit",1000,-180,180);
     //Residuals
-    TH1F * hResidua_Refit_Reco_photon_E= new TH1F("hResidua_Refit_Reco_photon_E","Residua Refit-Reco E 1/E",10000,-100,100);
-    TH1F * hResidua_Refit_Reco_photon_theta= new TH1F("hResidua_Refit_Reco_photon_theta","Residua Refit-Reco theta photon",10000,-3*180,3*180);
-    TH1F * hResidua_Refit_Reco_photon_phi= new TH1F("hResidua_Refit_Reco_photon_phi","Residua Refit-Reco phi photon",10000,-3*180,3*180);
+    TH1F * hResidua_Refit_Reco_photon_E= new TH1F("hResidua_Refit_Reco_photon_E","Residua Refit-Reco E 1/E",10000,-10,10);
+    TH1F * hResidua_Refit_Reco_photon_theta= new TH1F("hResidua_Refit_Reco_photon_theta","Residua Refit-Reco theta photon",10000,-90,90);
+    TH1F * hResidua_Refit_Reco_photon_phi= new TH1F("hResidua_Refit_Reco_photon_phi","Residua Refit-Reco phi photon",1000000,-3*180,3*180);
     TH1F * hResidua_Refit_Reco_photon_R= new TH1F("Residua Refit-Reco R photon","Residua Refit-Reco R photon",10000,-100,100);
     TH1F * hResidua_Refit_Reco_photon_Z= new TH1F("Residua Refit-Reco Z photon","Residua Refit-Reco Z photon",10000,-100,100);
 
      TH1F * hResidua_True_Reco_photon_E= new TH1F("hResidua_True_Reco_photon_E","Residua True-Reco E 1/E",10000,-100,100);
-    TH1F * hResidua_True_Reco_photon_theta= new TH1F("hResidua_True_Reco_photon_theta","Residua True-Reco theta photon",10000,-3*180,3*180);
-    TH1F * hResidua_True_Reco_photon_phi= new TH1F("hResidua_True_Reco_photon_phi","Residua True-Reco phi photon",10000,-3*180,3*180);
+    TH1F * hResidua_True_Reco_photon_theta= new TH1F("hResidua_True_Reco_photon_theta","Residua True-Reco theta photon",10000,-90,90);
+    TH1F * hResidua_True_Reco_photon_phi= new TH1F("hResidua_True_Reco_photon_phi","Residua True-Reco phi photon",1000000,-3*180,3*180);
     TH1F * hResidua_True_Reco_photon_R= new TH1F("Residua True-Reco R photon","Residua True-Reco R photon",10000,-100,100);
     TH1F * hResidua_True_Reco_photon_Z= new TH1F("Residua True-Reco Z photon","Residua True-Reco Z photon",10000,-100,100);
 
 
     TH1F * hResidua_True_Refit_photon_E= new TH1F("hResidua_True_Refit_photon_E","Residua True-Refit E 1/E",10000,-100,100);
-    TH1F * hResidua_True_Refit_photon_theta= new TH1F("hResidua_True_Refit_photon_theta","Residua True-Refit theta photon",10000,-3*180,3*180);
-    TH1F * hResidua_True_Refit_photon_phi= new TH1F("hResidua_True_Refit_photon_phi","Residua True-Refit phi photon",10000,-3*180,3*180);
+    TH1F * hResidua_True_Refit_photon_theta= new TH1F("hResidua_True_Refit_photon_theta","Residua True-Refit theta photon",10000,-90,90);
+    TH1F * hResidua_True_Refit_photon_phi= new TH1F("hResidua_True_Refit_photon_phi","Residua True-Refit phi photon",1000000,-3*180,3*180);
     TH1F * hResidua_True_Refit_photon_R= new TH1F("Residua True-Refit R photon","Residua True-Refit R photon",10000,-100,100);
     TH1F * hResidua_True_Refit_photon_Z= new TH1F("Residua True-Refit Z photon","Residua True-Refit Z photon",10000,-100,100);
 
@@ -655,12 +655,12 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
             //geant
             HGeantKine *geantkine;
             geantkine = HCategoryManager::getObject(geantkine, catGeant, neutr_cand->getGeantTrack()-1);
-           // cout<<neutr_cand->E()<<"  "<<geantkine->getTotalMomentum()<<endl;
             //cout<<geantkine->getE()<<endl;
 
             neutr_cand->calc4vectorProperties(0.0);//zmiana
             Float_t dist  = neutr_cand->getDistanceToEmc();
             Int_t ind=neutr_cand->getEmcClusterIndex();
+
 
 
             //
@@ -704,7 +704,7 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
 
             /////////////////////////////////////////////////////////
             KFitParticle* candidate = new KFitParticle(&lvg,neutr_cand->getR(),neutr_cand->getZ());  //puste? 
-             htheta_reco->Fill(candidate->getTheta()*TMath::RadToDeg());
+          
              
             if ( pid==1&&energy>150){
               //cout<<candidate->getTheta()<<endl;
@@ -718,9 +718,12 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
                 gamma_vector.push_back(neutr_cand);
                  geantkine_vec.push_back(geantkine);
                     hEPhtotonbeforeRefitcomb->Fill(candidate->Energy());
-                    hEPhtonEMC_gen->Fill(geantkine->getTotalMomentum());
+                    hEPhtonEMC_gen->Fill(geantkine->getE());
+                       htheta_reco->Fill(candidate->Theta()*TMath::RadToDeg());
+               htheta_GEANT->Fill(geantkine->getThetaDeg());
+            //cout<<neutr_cand->E()<<" getE "<<geantkine->getE()<<" Ekin "<<geantkine->getEkin()<<"   "<<geantkine->getTotalMomentum()<<"  "<<neutr_cand->getGeantTotalMom()<<endl;
                    
-                    htheta_GEANT->Fill(geantkine->getThetaDeg());
+                  
   
             htheta_reco150->Fill(candidate->getTheta()*TMath::RadToDeg());
             }
@@ -768,8 +771,8 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
                    // hEPhtotonbeforeRefitcomb->Fill(cand1Dec.Energy());
                    // hEPhtotonbeforeRefitcomb->Fill(cand11Dec.Energy());
                     //// emc gen
-                    double E1=geantkine_vec[ii]->getTotalMomentum();
-                    double E2=geantkine_vec[jj]->getTotalMomentum();
+                    double E1=geantkine_vec[ii]->getE();
+                    double E2=geantkine_vec[jj]->getE();
                     hEPhton1EMC_gen->Fill(E1);
                     hEPhton2EMC_gen->Fill(E2);
                   
@@ -801,7 +804,7 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
                         hProb->Fill(FitterMass.getProb());
                             
                         // Get the pull distributions
-                        if (FitterMass.getProb() > 0.01)
+                        if (1)//FitterMass.getProb() > 0.01
                         {
                           refited++;
                         
@@ -864,16 +867,16 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
                             hResidua_Refit_Reco_photon_phi->Fill(cand1mass.Phi()*R2D-cand1Dec.Phi()*R2D);
                             hResidua_Refit_Reco_photon_R->Fill(cand1mass.getR()-cand1Dec.getR());
                             hResidua_Refit_Reco_photon_Z->Fill(cand1mass.getZ()-cand1Dec.getZ());
-
-                            hResidua_True_Refit_photon_E->Fill(geantkine_vec[ii]->getTotalMomentum()-cand1mass.Energy());
+                            //cout<<cand1mass.Energy()<<" "<<cand1Dec.Energy()<<"   "<<cand2mass.Energy()<<"  "<<cand11Dec.Energy()<<endl;
+                            hResidua_True_Refit_photon_E->Fill(geantkine_vec[ii]->getE()-cand1mass.Energy());
                             hResidua_True_Refit_photon_theta->Fill(geantkine_vec[ii]->getThetaDeg()-cand1mass.Theta()*R2D);
                             hResidua_True_Refit_photon_phi->Fill(geantkine_vec[ii]->getPhiDeg()-cand1mass.Phi()*R2D);
 
 
-                            hResidua_True_Reco_photon_E->Fill(geantkine_vec[ii]->getTotalMomentum()-cand1Dec.Energy());
+                            hResidua_True_Reco_photon_E->Fill(geantkine_vec[ii]->getE()-cand1Dec.Energy());
                             hResidua_True_Reco_photon_theta->Fill(geantkine_vec[ii]->getThetaDeg()-cand1Dec.Theta()*R2D);
                             hResidua_True_Reco_photon_phi->Fill(geantkine_vec[ii]->getPhiDeg()-cand1Dec.Phi()*R2D);
-
+                           // cout<<geantkine_vec[ii]->getE()<<"  "<<cand1mass.Energy()<<endl;
 
 
 
@@ -890,14 +893,15 @@ HCategoryManager::getObject(neutr_cand, fEmcNeutralCand, j);
                             hResidua_Refit_Reco_photon_R->Fill(cand2mass.getR()-cand11Dec.getR());
                             hResidua_Refit_Reco_photon_Z->Fill(cand2mass.getZ()-cand11Dec.getZ());
 
-                            hResidua_True_Refit_photon_E->Fill(geantkine_vec[jj]->getTotalMomentum()-cand2mass.Energy());
+                            hResidua_True_Refit_photon_E->Fill(geantkine_vec[jj]->getE()-cand2mass.Energy());
                             hResidua_True_Refit_photon_theta->Fill(geantkine_vec[jj]->getThetaDeg()-cand2mass.Theta()*R2D);
                             hResidua_True_Refit_photon_phi->Fill(geantkine_vec[jj]->getPhiDeg()-cand2mass.Phi()*R2D);
-                            cout<<geantkine_vec[jj]->getTotalMomentum()<<"  "<<cand2mass.Energy()<<"  "<<cand11Dec.Energy()<<endl;
+                           // cout<<geantkine_vec[jj]->getTotalMomentum()<<"  "<<cand2mass.Energy()<<"  "<<cand11Dec.Energy()<<endl;
+                            //cout<<geantkine_vec[ii]->getTotalMomentum()<<"  "<<cand1mass.Energy()<<"  "<<cand1Dec.Energy()<<endl<<endl<<endl;
                             hResidua_True_Refit_photon_theta->Fill(geantkine_vec[jj]->getThetaDeg()-cand2mass.Theta()*R2D);
                             hResidua_True_Refit_photon_phi->Fill(geantkine_vec[jj]->getPhiDeg()-cand2mass.Phi()*R2D);
 
-                            hResidua_True_Reco_photon_E->Fill(geantkine_vec[jj]->getTotalMomentum()-cand11Dec.Energy());
+                            hResidua_True_Reco_photon_E->Fill(geantkine_vec[jj]->getE()-cand11Dec.Energy());
                             hResidua_True_Reco_photon_theta->Fill(geantkine_vec[jj]->getThetaDeg()-cand11Dec.Theta()*R2D);
                             hResidua_True_Reco_photon_phi->Fill(geantkine_vec[jj]->getPhiDeg()-cand11Dec.Phi()*R2D);
                             
